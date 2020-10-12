@@ -94,17 +94,6 @@ class JExcelHandlers a where
     --return ()
 
 
-jsvalToCell :: JSVal -> JSM Cell
-jsvalToCell val' = do
-    tmp  <- val' !! 0
-    id'  <- tmp ^. js "id"
-    text <- valToText id'
-    -- liftIO $ print text
-    let (column : row : _) = split (== '-') text
-    return (read . unpack $ column, read . unpack $ row)
-
-
-
 newJExcel :: ( IsElement element
              , JExcelHandlers handlers
              )
@@ -123,16 +112,17 @@ newJExcel element
     -- liftIO $ print (toJSON $ jexcelConfig)
     js_config <- toJSVal . toJSON $ jexcelConfig
     js_config ^. jss "onload" (fun $ \_ _ _ -> onload handlers $ OnLoad)
-    js_config ^. jss "onbeforechange" (fun $ \_ _ [_, js_cell, js_before, js_after] -> do
-        cell <- jsvalToCell js_cell
-        before <- valToText js_before
-        after  <- valToText js_after
-        onbeforechange handlers $ OnBeforeChange cell before after)
-    js_config ^.jss "onchange" (fun $ \_ _ [_, js_cell, js_after, js_before] -> do
-        cell <- jsvalToCell js_cell
-        before <- valToText js_before
-        after  <- valToText js_after
-        onchange handlers $ OnChange cell after before)
+    js_config ^. jss "onbeforechange" (fun $ \_ _ (_: _cell: x': y': js_value:_) -> do
+        (x :: Int) <- floor <$> valToNumber x'
+        (y :: Int) <- floor <$> valToNumber y'
+        before <- valToText js_value
+        onbeforechange handlers $ OnBeforeChange (x, y) before mempty)
+    js_config ^. jss "onchange" (fun $ \_ _ (_: _cell: x': y': js_value: js_oldValue:_) -> do
+        (x :: Int) <- floor <$> valToNumber x'
+        (y :: Int) <- floor <$> valToNumber y'
+        after  <- valToText js_value
+        before  <- valToText js_oldValue
+        onchange handlers $ OnChange (x, y) after before)
     js_config ^. jss "onafterchange" (fun $ \_ _ _ -> onafterchange handlers $ OnAfterChange)
     js_config ^. jss "oninsertrow" (fun $ \_ _ _ -> oninsertrow handlers $ OnInsertRow)
     js_config ^. jss "ondeleterow" (fun $ \_ _ _ -> ondeleterow handlers $ OnDeleteRow)
