@@ -99,7 +99,7 @@ jsvalToCell val' = do
     tmp  <- val' !! 0
     id'  <- tmp ^. js "id"
     text <- valToText id'
-    liftIO $ print text
+    -- liftIO $ print text
     let (column : row : _) = split (== '-') text
     return (read . unpack $ column, read . unpack $ row)
 
@@ -120,7 +120,7 @@ newJExcel element
           handlers
     = do
     let js_element' = unElement . toElement  $ element
-    liftIO $ print (toJSON $ jexcelConfig)
+    -- liftIO $ print (toJSON $ jexcelConfig)
     js_config <- toJSVal . toJSON $ jexcelConfig
     js_config ^. jss "onload" (fun $ \_ _ _ -> onload handlers $ OnLoad)
     js_config ^. jss "onbeforechange" (fun $ \_ _ [_, js_cell, js_before, js_after] -> do
@@ -143,8 +143,8 @@ newJExcel element
         (y1 :: Int) <- floor <$> valToNumber y1'
         (x2 :: Int) <- floor <$> valToNumber x2'
         (y2 :: Int) <- floor <$> valToNumber y2'
-        liftJSM $ print (x1, y1)
-        liftJSM $ print (x2, y2)
+        -- liftJSM $ print (x1, y1)
+        -- liftJSM $ print (x2, y2)
         onselection handlers $ OnSelection (x1, y1) (x2, y2))
     js_config ^. jss "onsort" (fun $ \_ _ _ -> onsort handlers $ OnSort)
     js_config ^. jss "onresize" (fun $ \_ _ _ -> onresize handlers $ OnResize)
